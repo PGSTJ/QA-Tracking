@@ -1,0 +1,2 @@
+class ProspectiveScribeDivision(Exception):
+    pass

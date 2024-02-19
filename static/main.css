@@ -1,0 +1,195 @@
+* {
+    z-index: 998;
+}
+
+hr {
+    width: 75%;
+}
+
+.tracker-quickviews {
+    display: flex;
+    justify-content: space-around;
+    margin-bottom: 3%;
+}
+
+.tracker-quickviews table {
+    border-radius: 10px;
+}
+
+
+
+.tracker-quickview {
+    /* display: inline; */
+    margin-top: 1.5%;
+    width: 700px;
+}
+
+.tracker-quickview-title {
+    text-align: center;
+}
+
+/* #prospective {
+    border: 1px solid black;
+} */
+
+.tq-header {
+    background-color: lightblue;
+}
+
+
+.tracker-quickview th {
+    border-bottom: 2px solid darkblue;
+    padding: 3px;
+    margin: 0;
+    /* border-radius: 10px; */
+}
+
+.tracker-quickview td {
+    padding-left: 15px;    
+    padding-right: 15px;   
+    width: 16.67%; 
+    text-align: center;
+    
+}
+
+.add-qa {
+    font-size: smaller;
+    /* display: inline; */
+    margin-left: 75%;
+    padding-top: 10px;
+}
+
+.table-view {
+    border: 1px solid black;
+    border-radius: 10px;
+    box-shadow: 2px 4px 6px 1px grey;
+    width: 675px;
+    max-width: 675px;
+
+}
+
+.table-view table {
+    width: 675px;
+    max-width: 675px;
+    border-collapse: collapse;
+    border-radius: 10px;
+}
+
+.table-view tr:nth-child(odd) {
+    background-color: rgba(0, 220, 240, .6);
+    border-radius: 10px;
+}
+
+.table-view tr:nth-child(even) {
+    background-color: white;
+    border-radius: 10px;
+}
+
+.table-view a {
+    margin-top: 4px;
+    padding-top: 10px;
+}
+
+.hidden-none {
+    text-align: center;
+    padding: 3px;
+}
+
+
+
+
+.overlay {
+    visibility: hidden;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent black background */
+    z-index: 999; /* Make sure the overlay is behind the popup but above other content */
+    /* display: none; Hide the overlay by default */
+}
+
+
+#add-prospective-popup {
+    display: none;
+    background-color: lightgreen;
+    position: fixed;
+    border-radius: 8px;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    padding: 20px;
+    z-index: 1000;
+}
+
+.qaf-input {
+    background-color: lightgreen;
+    padding: 10px;
+    margin: 10px;
+    margin-top: 15px;
+    margin-bottom: 15px;
+}
+
+
+
+
+.master-view {
+    /* border: 1px solid black; */
+    width: 55vw;
+    height: 600px;
+    margin-top: 5%;
+    margin-left: 22.5vw;
+    margin-right: 22.5vw;
+    margin-bottom: 4vw;
+
+}
+
+.master-view a {
+    text-decoration: none;
+}
+
+.all-divisions {
+    display: flex;
+    flex-wrap: wrap;
+    flex-direction: row;
+    justify-content: space-between;
+    height: 100%;
+    width: 100%;
+}
+
+.division {
+    display: flex;
+    height: 30%;
+    width: 30%;
+    margin: 5px; /* Add spacing between the child boxes */
+    border: 1px solid black;
+    border-radius: 8px;
+    align-items: center;
+    justify-content: center;
+}
+
+.division:hover {
+    box-shadow: 3px 7px 10px 10px grey;
+    font-size: larger;
+    text-align: center;
+}
+
+
+
+/* .due-qa {
+    color: yellow;
+} */
+
+
+
+
+.stats-view {
+    border: 1px solid black;
+    width: 55vw;
+    height: 600px;
+    margin-top: 5%;
+    margin-left: 22.5vw;
+    margin-right: 22.5vw;
+    margin-bottom: 7vw;
+}

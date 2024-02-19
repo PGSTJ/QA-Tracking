@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+
+{% block head %}
+<link rel="stylesheet" href="..\\static\\main.css">
+<title>QA Tracker</title>
+{% endblock %}
+
+{% block content %}
+<div class="tracker-quickviews">
+    <div class="tracker-quickview" id="prospective">
+        <h1 class="tracker-quickview-title">Prospective</h1>
+        <div class="table-view">
+            <table>
+                <tr class="tq-header">
+                    <th>Date</th>
+                    <th>Scribe</th>
+                    <th>Division</th>
+                    <th>Assessor</th>
+                    <th>Provider</th>
+                    <th>Comments</th>
+                </tr>
+
+                {% for upcoming in prospective %}
+                    
+                    <tr>
+                        <td class="date">{{  upcoming[1]  }}</td>
+                        <td class="scribe">{{  upcoming[0]  }}</td>
+                        <td class="p-division">{{  upcoming[2]  }}</td>
+                        <td class="assessor">{{  upcoming[3]  }}</td>
+                        <td class="provider">{{  upcoming[4]  }}</td>
+                        <td></td>
+                    </tr>
+                {% endfor %}
+            </table>
+            <div class="hidden-none">None</div>
+        </div>
+        <div class="add-qa"><a href="#" id="add-qa-link">Add upcoming QA</a></div>
+    </div>
+
+    <div class="overlay" id="qaf-overlay"></div>
+
+    <div id="add-prospective-popup" class="hidden">
+        <h1>Add Prospective QA</h1>
+        <form id="/qa-form" action="/submit_prospective" method="POST">
+            <div class="qaf-row">
+                <input class="qaf-input" type="date" id="qaf-date" name="qaf-date" placeholder="Date">
+                <input class="qaf-input" type="text" name="qaf-scribe" id="qaf-scribe" placeholder="Scribe Name">
+            </div>
+            <div class="qaf-row">
+                <input class="qaf-input" type="text" id="qaf-division" name="qaf-division" placeholder="Division">
+                <input class="qaf-input" type="text" name="qaf-provider" id="qaf-provider" placeholder="Provider Name">
+            </div>
+            <div class="qaf-row">
+                <input class="qaf-input" type="text" id="qaf-assessor" name="qaf-assessor" placeholder="Assessor">
+                <input class="qaf-input" type="text" name="qaf-comments" id="qaf-comments" placeholder="Comments...">
+            </div>
+            <button type="submit">Submit</button>
+        </form>
+
+    </div>
+
+    <div class="tracker-quickview" id="due">
+        <h1 class="tracker-quickview-title">Due</h1>
+        <div class="table-view">
+            <table>
+                <tr class="tq-header">
+                    <th>Date</th>
+                    <th>Scribe</th>
+                    <th>Division</th>
+                    <th>QA Number</th>
+                </tr>
+
+                {% for need in due %}
+                    <tr class="due-qa">
+                        <td class="due-date">need[]</td>
+                        <td class="scribe">Danny Hernandy</td>
+                        <td class="dq-division">END</td>
+                        <td class="qan">2</td>
+                    </tr>
+                {% endfor %}
+            </table>   
+            <div class="hidden-none">None</div>
+        </div>
+    </div>
+    
+</div>
+
+<hr>
+
+<div class="master-view">
+    <div class="all-divisions">
+        <a href="#" class="division"><div>Endocrinology</div></a>
+        <a href="#" class="division"><div>Pulmonology</div></a>
+        <a href="#" class="division"><div>Orthopedics</div></a>
+        <a href="#" class="division"><div>Rheumatology</div></a>
+        <a href="#" class="division"><div>Neurology</div></a>
+        <a href="#" class="division"><div>Dermatology</div></a>
+        <a href="#" class="division"><div>Allergy and Immunonology</div></a>
+        <a href="#" class="division"><div>Medical Genetics</div></a>
+        <a href="#" class="division"><div>Developmental Behvioral Psychology</div></a>
+    </div>
+
+</div>
+
+<hr>
+
+<div class="stats-view">
+    <h1 style="text-align: center;">Statistics</h1>
+</div>
+{% endblock %}
