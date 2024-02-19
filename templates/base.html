@@ -30,11 +30,80 @@
                     <a href="{{  url_for('home')  }}" >Home</a>
                 </div>
                 <div class="nav-link">
-                    <a href="#" >Divsions</a>
+                    <a href="#" >Actions</a>
+                    <div class="actions-menu">
+                        <a href="#" id="add-qa-link">Add Prospective QA</a>
+                        <a href="#" id="add-scribe-link">Add Scribes</a>
+                        <a href="#">Option 3</a>
+                    </div>
                 </div>
             </div>
         </div>
     </nav>
+
+
+    <div class="overlay" id="popup-overlay"></div>
+    
+    <div id="add-prospective-popup" class="hidden">
+        <h1>Add Prospective QA</h1>
+        <form id="qa-form" action="/submit_prospective" method="POST">
+            <div class="qaf-row">
+                <input class="qaf-input" type="date" id="qaf-date" name="qaf-date" placeholder="Date">
+                <input class="qaf-input" type="text" name="qaf-scribe" id="qaf-scribe" placeholder="Scribe Name">
+            </div>
+            <div class="qaf-row">
+                <input class="qaf-input" type="text" id="qaf-division" name="qaf-division" placeholder="Division">
+                <input class="qaf-input" type="text" name="qaf-provider" id="qaf-provider" placeholder="Provider Name">
+            </div>
+            <div class="qaf-row">
+                <input class="qaf-input" type="text" id="qaf-assessor" name="qaf-assessor" placeholder="Assessor">
+                <input class="qaf-input" type="text" name="qaf-comments" id="qaf-comments" placeholder="Comments...">
+            </div>
+            <button type="submit" class="qaf-submit">Submit</button>
+        </form>
+
+    </div>
+
+    <div id="add-scribe-popup" class="hidden">
+        <h1>Add Scribe</h1>
+        <div class="nsf-form">
+            <form id="new-scribe-form" action="/add_new_scribe" method="POST">
+                <div class="nsf-row">
+                    <div class="nsf-entry">
+                        <p class="nsf-title">Scribe Name*</p>
+                        <input class="nsf-input" type="text" id="nsf-scribe" name="nsf-scribe" required>
+                    </div>
+                    <div class="nsf-entry">
+                        <p class="nsf-title">Division*</p>
+                        <Select class="nsf-input" id="nsf-division" name="nsf-division" required>
+                            {% for divs in divisions %}
+                            <option value="{{  divs  }}">{{  divs  }}</option>
+                            {% endfor %}
+                        </Select>
+                    </div>
+                </div>
+                <div class="nsf-row">
+                    <div class="nsf-entry">
+                        <p class="nsf-title">QAT</p>
+                        <select class="nsf-input" name="nsf-qat" id="nsf-qat">
+                            {% for qat in qats %}
+                            <option value="{{  qat  }}">{{  qat  }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="nsf-entry">
+                        <p class="nsf-title">FFTS</p>
+                        <input type="number" step="0.1" class="nsf-input" name="nsf-ffts" id="nsf-ffts">
+                    </div>
+                    <div class="nsf-entry">
+                        <p class="nsf-title">Solo Date</p>
+                        <input class="nsf-input" type="date" name="nsf-solo-date" id="nsf-solo-date">
+                    </div>
+                </div>
+                <button type="submit" class="nsf-submit">Submit</button>
+            </form>
+        </div>
+    </div>
 
     {% block content %}
 
