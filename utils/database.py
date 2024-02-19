@@ -3,8 +3,8 @@ import os
 import traceback
 import json
 
-# from .custom_errors import ProspectiveScribeDivision
-from custom_errors import ProspectiveScribeDivision
+from .custom_errors import ProspectiveScribeDivision
+# from custom_errors import ProspectiveScribeDivision
 
 dbf = "QAData.db"
 dbp = os.path.abspath(dbf)

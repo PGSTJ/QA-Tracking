@@ -1,9 +1,11 @@
 document.addEventListener("DOMContentLoaded", function () {
-    addQaPopup();
     checkTrackerLoop();
+    addQaPopup();
 });
 
 function addQaPopup() {
+    console.log('addQaPopup function called');
+
     // Get elements
     const addQALink = document.getElementById("add-qa-link");
     const popupForm = document.getElementById("add-prospective-popup");
@@ -29,6 +31,7 @@ function addQaPopup() {
 }
 
 function checkTrackerLoop() {
+    console.log('checkTrackerLoop function called');
     var prospectiveRows = document.querySelectorAll('#prospective .table-view table tr');
     var dueRows = document.querySelectorAll('#due .table-view table tr')
     var hiddenNoneDivPro = document.querySelector('#prospective .hidden-none');
@@ -37,16 +40,16 @@ function checkTrackerLoop() {
     console.log("Prospective rows length:", prospectiveRows.length);
     console.log("Due rows length:", dueRows.length);
 
-    if (prospectiveRows.length === 1) {
-        hiddenNoneDivPro.style.display = 'block';
-    } else {
+    if (prospectiveRows.length > 1) {
         hiddenNoneDivPro.style.display = 'none';
+    } else {
+        hiddenNoneDivPro.style.display = 'block';
     }
 
-    if (dueRows.length === 1) {
-        hiddenNoneDivDue.style.display = 'block';
-    } else {
+    if (dueRows.length > 1) {
         hiddenNoneDivDue.style.display = 'none';
+    } else {
+        hiddenNoneDivDue.style.display = 'block';
     }
 
 }
