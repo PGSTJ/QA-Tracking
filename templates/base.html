@@ -49,17 +49,37 @@
         <form id="qa-form" action="/submit_prospective" method="POST">
             <div class="qaf-row">
                 <input class="qaf-input" type="date" id="qaf-date" name="qaf-date" placeholder="Date">
-                <input class="qaf-input" type="text" name="qaf-scribe" id="qaf-scribe" placeholder="Scribe Name">
+                <!-- <input class="qaf-input" type="text" name="qaf-scribe" id="qaf-scribe" placeholder="Scribe Name"> -->
+                <select class="qaf-input" name="qaf-division" id="qaf-division" required>
+                    <option value="empty-placeholder"></option>
+                    {% for divs in divisions %}
+                    <option value="{{  divs  }}">{{  divs  }}</option>
+                    {% endfor %}
+                </select>
+                <select name="qaf-scribe" id="qaf-scribe" class="qaf-input">
+                    {% for info in scribes %}
+                    <option value="{{  info[0]  }}">{{  info[0]  }}</option>
+                    {% endfor %}
+                </select>
             </div>
             <div class="qaf-row">
-                <input class="qaf-input" type="text" id="qaf-division" name="qaf-division" placeholder="Division">
-                <input class="qaf-input" type="text" name="qaf-provider" id="qaf-provider" placeholder="Provider Name">
-            </div>
-            <div class="qaf-row">
-                <input class="qaf-input" type="text" id="qaf-assessor" name="qaf-assessor" placeholder="Assessor">
+                <!-- <input class="qaf-input" type="text" id="qaf-division" name="qaf-division" placeholder="Division">
+                <input class="qaf-input" type="text" name="qaf-provider" id="qaf-provider" placeholder="Provider Name"> -->
+                <select class="qaf-input" name="qaf-provider" id="qaf-provider">
+                    {% for prov in providers %}
+                    <option value="{{  prov  }}">{{  prov  }}</option>
+                    {% endfor %}
+                </select>
+                <select class="qaf-input" name="qaf-assessor" id="qaf-assessor">
+                    {% for assr in assessors %}
+                    <option value="{{  assr  }}">{{  assr  }}</option>
+                    {% endfor %}
+                </select>
                 <input class="qaf-input" type="text" name="qaf-comments" id="qaf-comments" placeholder="Comments...">
             </div>
-            <button type="submit" class="qaf-submit">Submit</button>
+            <div class="qaf-row">
+                <button type="submit" class="qaf-submit">Submit</button> 
+            </div>
         </form>
 
     </div>

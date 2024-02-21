@@ -1,7 +1,7 @@
-from flask import (Flask, redirect, render_template, request, send_file, session, url_for, send_from_directory, make_response)
+from flask import (Flask, redirect, render_template, request, send_file, session, url_for, send_from_directory, make_response, jsonify)
 import os
 
-from utils.database import ProspectiveQAs, DueQAs, ScribeData, load_prospective_qas, load_divisions, load_qa_tracks
+from utils.database import ProspectiveQAs, DueQAs, ScribeData, load_prospective_qas, load_divisions, load_qa_tracks, display_scribe_divisions, display_providers_divisions, _convert_division_long_short
 
 app = Flask(__name__, static_url_path='/static')
 
@@ -24,7 +24,7 @@ def home():
     all_divisions = load_divisions()
     all_qat_names = load_qa_tracks()
     
-    # need render variables: due
+    # need render variables: due, scribes, providers, assessors
     return render_template('home.html', prospective=prospective_qas, divisions=all_divisions, qats=all_qat_names)
 
 @app.route('/submit_prospective', methods=['POST'])
@@ -38,11 +38,31 @@ def submit_qa():
     return redirect(url_for('home'))
 
 
+
+
+
 @app.route('/add_new_scribe', methods=['POST'])
 def add_scribe():
     new = ScribeData()
     new.add_scribe(name=request.form['nsf-scribe'], division=request.form['nsf-division'], qat=request.form['nsf-qat'], solo=request.form['nsf-solo-date'], ffts=request.form['nsf-ffts'])
     return redirect(url_for('home'))
+
+
+
+
+# TODO Works but will error if re-choose an option
+@app.route('/get_scribes_per_division', methods=['POST', 'GET'])
+def populate_scribe_divisions_dropdown():
+    division = request.json.get('division')
+    div_sn = _convert_division_long_short(division)
+    return jsonify(display_scribe_divisions(div_sn))
+
+@app.route('/get_providers_per_division', methods=['POST', 'GET'])
+def populate_providers_divisions_dropdown():
+    division = request.json.get('division')
+    div_sn = _convert_division_long_short(division)
+    return jsonify(display_providers_divisions(div_sn))
+    
 
 
 if __name__ == '__main__':

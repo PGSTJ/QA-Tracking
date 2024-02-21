@@ -1,5 +1,7 @@
 document.addEventListener("DOMContentLoaded", function () {
     checkTrackerLoop();
+    scribeDivisionListener();
+    providerDivisionListener();
     addQaPopup();
     addNsPopup();
 });
@@ -13,7 +15,7 @@ function addQaPopup() {
     // Show popup on link click
     addQALink.addEventListener("click", function (event) {
         event.preventDefault();
-        popupForm.style.display = "block";
+        popupForm.style.display = "flex";
         overLay.style.visibility = "visible";
     });
     
@@ -43,11 +45,6 @@ function addQaPopup() {
             }   
         } 
         xhr.send(formData)
-        
-        // Handle form submission using AJAX or other method
-        // After submission, you can reload the page or update the content dynamically
-        // For simplicity, let's reload the page
-        // window.location.href = '/';
     });
 }
 
@@ -60,7 +57,7 @@ function addNsPopup() {
     
     addScribeLink.addEventListener("click", function (event) {
         event.preventDefault();
-        popupNsForm.style.display = "block";
+        popupNsForm.style.display = "flex";
         overLay.style.visibility = "visible";
     });
     
@@ -91,11 +88,6 @@ function addNsPopup() {
             }   
         } 
         xhr.send(formData)
-
-        // Handle form submission using AJAX or other method
-        // After submission, you can reload the page or update the content dynamically
-        // For simplicity, let's reload the page
-        // window.location.href = '/home';
     });
 }
 
@@ -121,4 +113,62 @@ function checkTrackerLoop() {
         hiddenNoneDivDue.style.display = 'block';
     }
 
+}
+
+function scribeDivisionListener() {
+    document.getElementById("qaf-division").addEventListener("change", function() {
+        var division = this.value;
+        
+        fetch('/get_scribes_per_division', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ 'division': division })
+        })
+        .then(response => response.json())
+        .then(data => {
+            var scribeSelect = document.getElementById("qaf-scribe");
+            scribeSelect.innerHTML = "";
+            
+            data.scribes.forEach(function(scribe) {
+                var option = document.createElement("option");
+                option.text = scribe;
+                option.value = scribe;
+                scribeSelect.add(option);
+            });
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+    });
+}
+
+function providerDivisionListener() {
+    document.getElementById("qaf-division").addEventListener("change", function() {
+        var division = this.value;
+        
+        fetch('/get_providers_per_division', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ 'division': division })
+        })
+        .then(response => response.json())
+        .then(data => {
+            var providerSelect = document.getElementById("qaf-provider");
+            providerSelect.innerHTML = "";
+            
+            data.providers.forEach(function(provider) {
+                var option = document.createElement("option");
+                option.text = provider;
+                option.value = provider;
+                providerSelect.add(option);
+            });
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+    });
 }

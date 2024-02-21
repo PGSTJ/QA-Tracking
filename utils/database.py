@@ -229,7 +229,7 @@ class ScribeData(QAD):
 
     def __init__(self) -> None:
         super().__init__()
-        curs.execute(f'CREATE TABLE IF NOT EXISTS {self.table_name}(name TEXT PRIMARY KEY, solo_date VARCHAR(11), qat INT, lqa VARCHAR(11), nqa VARCHAR(11), tqa INT, ffts VARCHAR(3), division TEXT, aqaes VARCHAR(5), qaf VARCHAR(5), qar VARCHAR(5), qats VARCHAR(5), apes VARCHAR(3))')
+        curs.execute(f'CREATE TABLE IF NOT EXISTS {self.table_name}(name TEXT PRIMARY KEY, solo_date VARCHAR(11), qat INT, lqa VARCHAR(11), nqa VARCHAR(11), tqa INT, ffts VARCHAR(3), division TEXT, aqaes VARCHAR(5), qaf VARCHAR(5), qar VARCHAR(5), qats VARCHAR(5), apes VARCHAR(3), assr BOOL)')
         self.post_init()
         
         # print(f'values: {self.values}')
@@ -241,6 +241,7 @@ class ScribeData(QAD):
         Add a scribe to DB with default values as follows:
         - TQA = 0 | QAT = 9
         - LQA/NQA/FFTS | aQAES/aPES/QATS/QAF/QAR = 'empty_string'
+        - ASSR = False
         
         """
         try:
@@ -249,7 +250,7 @@ class ScribeData(QAD):
 
             nqa, fqat = self._derive_nqa(qat_int, fsd)
                 
-            curs.execute(f'INSERT INTO {self.table_name}({self.values}) VALUES ({self.insert_placeholders})', (name.title(), fsd, fqat, '',nqa, 0, fffts, div_abbrv, '', '', '', '', ''))
+            curs.execute(f'INSERT INTO {self.table_name}({self.values}) VALUES ({self.insert_placeholders})', (name.title(), fsd, fqat, '',nqa, 0, fffts, div_abbrv, '', '', '', '', '', False))
             conn.commit()
         except sl.IntegrityError:
             print('This scribe already exists within the database.')
@@ -317,7 +318,7 @@ class ScribeData(QAD):
 
     @staticmethod
     def _convert_division(division_longname:str) -> str:
-        """ Converts whole division name from form to 3 letter abbreviation """
+        """ Converts whole division name from form to 3 letter abbreviation, then formats as string list for DB entry """
         return [info[0] for info in curs.execute('SELECT shortname FROM abbreviations WHERE name=?', (division_longname,))][0]
     
     @staticmethod
@@ -334,24 +335,103 @@ class ScribeData(QAD):
         return end_format, qatv
             
         
+class ProviderData(QAD):
+    def __init__(self) -> None:
+        super().__init__()
+        curs.execute(f'CREATE TABLE IF NOT EXISTS {self.table_name}(name TEXT PRIMARY KEY, division TEXT, subspecialty TEXT, FOREIGN KEY(division) REFERENCES abbreviations(shortname))')
+        self.post_init()
 
+
+    def add_provider(self, name:str, division_ln:str) -> bool:
+        div_sn:str = [info[1] for info in curs.execute('SELECT name, shortname FROM abbreviations WHERE name=?', (division_ln,))][0]
+
+        curs.execute(f'INSERT INTO {self.table_name}({self.values}) VALUES ({self.insert_placeholders})', (name, div_sn, ''))
+        conn.commit()
+        return True
+        
 
 
 def load_prospective_qas() -> list[tuple]:
     """ Extracts all entries from prospective QA DB table and formats to display in table """
     return [info for info in curs.execute('SELECT date, scribe, division, assessor, provider, comments FROM prospectiveqas')]
 
-def load_divisions() -> list[tuple]:
+def load_due_qas() -> list[tuple]:
+    """ Extracts all entries from due QA DB table and formats to display in table """
+
+
+
+
+def load_divisions() -> list[str]:
     """ Extracts all divisions to display in drop down selections """
     return [info[1] for info in curs.execute('SELECT uid, name FROM abbreviations') if 'DIV' in info[0]]
 
-def load_qa_tracks():
+def load_qa_tracks() -> list[str]:
     """ Extracts QAT longnames to display in drop down selections """
     return [info[1] for info in curs.execute('SELECT uid, name FROM abbreviations') if 'QAT' in info[0]]
 
+def load_scribes() -> list[tuple]:
+    """ Extracts all scribes to display in drop down selections; extracts div too for adding prospective QAs """
+    return [info for info in curs.execute('SELECT name, division FROM scribedata')]
+     
+
+
+def load_providers() -> list[str]:
+    """ Extracts all providers to display in drop down selections """
+    
+
+def load_assessors() -> list[str]:
+    """ Extracts all eligible QA assessors to display in drop down selections """
+    return [info[0] for info in curs.execute('SELECT name FROM scribedata WHERE assr=?', (True,))]
+    
+
+
+
+def add_division(scribe:str, division_longname:str) -> bool:
+    """ Add additional divisions to a scribe profile | considering add scribe profile class, this will be apart of there """
+    current_divs:list = [info[0] for info in curs.execute('SELECT division FROM scribedata WHERE name=?', (scribe,))][0].split(', ')
+    current_divs.append([info[1] for info in curs.execute('SELECT name, shortname FROM abbreviations WHERE name=?', (division_longname.title(),))][0])
+    curs.execute('UPDATE scribedata SET division=? WHERE name=?', (', '.join(current_divs), scribe))
+    conn.commit()
+    return True
+
+def remove_division(scribe:str, division_longname:str) -> bool:
+    """  """
+    current_divs:list = [info[0] for info in curs.execute('SELECT division FROM scribedata WHERE name=?', (scribe,))][0].split(', ')
+    current_divs.remove([info[1] for info in curs.execute('SELECT name, shortname FROM abbreviations WHERE name=?', (division_longname.title(),))][0])
+    curs.execute('UPDATE scribedata SET division=? WHERE name=?', (', '.join(current_divs), scribe))
+    conn.commit()
+    return True
+
+
+
+def _convert_division_long_short(division_ln:str) -> list:
+    return [info[1] for info in curs.execute('SELECT name, shortname FROM abbreviations WHERE name=?', (division_ln,))][0]
+    
+        
+
+
+def display_scribe_divisions(division_sn:str) -> dict:
+    """ Displays all scribes associated with a division """
+    scribe_list = [info[0] for info in curs.execute('SELECT name, division FROM scribedata') if division_sn in info[1].split(', ')]
+    associated_scibes = [scribe for scribe in scribe_list]
+    return {'scribes':associated_scibes} 
+
+def display_providers_divisions(division_sn:str) -> dict:
+    """ Displays all providers associated with a division """
+    provider_list = [info[0] for info in curs.execute('SELECT name, division FROM providerdata') if division_sn in info[1].split(', ')]
+    associated_providers = [provider for provider in provider_list]
+    return {'providers': associated_providers}
+
+def prospective_dropdown_display(division_ln:str, type:str):
+    """ Displays providers and scribes in pQAF dropdown based on specified division """       
+    # convert div long name to shortname (abbreviation)
+    div_sn:str = [info[1] for info in curs.execute('SELECT name, shortname FROM abbreviations WHERE name=?', (division_ln.title(),))][0]
+    # creates list of all scribes/providers in the specified division
+    info = [data for data in [info[0] for info in curs.execute(f'SELECT name, division FROM {type}data') if div_sn in info[1].split(', ')]]
+    return {type+'s':info}
         
 
 if __name__ == '__main__':
-    f = Abbreviations()
-    f.mass_upload()    
+    d = prospective_dropdown_display('endocrinology', 'provider')
+    print(d)
     

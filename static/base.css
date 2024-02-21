@@ -131,7 +131,11 @@ h1 {
 
 .hidden {
     display: none;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
     background-color: lightgreen;
+    width: auto;
     position: fixed;
     border-radius: 8px;
     border: 2px solid black;
