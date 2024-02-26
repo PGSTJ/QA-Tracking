@@ -6,8 +6,8 @@ import csv
 import datetime
 import pandas as pd
 
-from .custom_errors import ProspectiveScribeDivision
-# from custom_errors import ProspectiveScribeDivision, DivisionExistenceError
+from .custom_errors import ProspectiveScribeDivision, DivisionExistenceError, ScribeNameExistenceError, MultipleDivisionInputs
+# from custom_errors import ProspectiveScribeDivision, DivisionExistenceError, ScribeNameExistenceError, MultipleDivisionInputs
 
 dbf = "QAData.db"
 dbp = os.path.abspath(dbf)
@@ -81,6 +81,21 @@ class QAD():
 
     def drop_table(self):
         curs.execute(f'DROP TABLE {self.table_name}')
+        conn.commit()
+
+    @staticmethod
+    def division_conversion(division_longname:str=None, division_shortname:str=None) -> str:
+        """ Converts from division long name to the short, abbreviation, and vice versa - based on what value is provided """
+
+        # check to ensure two values are not provided
+        if division_longname and division_shortname:
+            raise MultipleDivisionInputs('Provide only either the long name or the abbreviation, not both.')
+        
+        elif isinstance(division_longname, str):
+            return [info[0] for info in curs.execute('SELECT shortname FROM abbreviations WHERE name=?', (division_longname,))][0]
+        elif isinstance(division_shortname, str):
+            return [info[0] for info in curs.execute('SELECT name FROM abbreviations WHERE shortname=?', (division_shortname,))][0]
+
 
 
 class Abbreviations(QAD):
@@ -148,10 +163,11 @@ class ProspectiveQAs(QAD):
 
     def add_prospective(self, scribe:str, date:str, division:str, assessor:str, provider:str, comments:str):
         try:
-            if not self._verify_scribedivision(scribe, division):
-                raise ProspectiveScribeDivision('This division is not associated with this scribes database profile')
-            uid = self.uid_generator(scribe, date, division)
-            curs.execute(f'INSERT INTO {self.table_name}({self.values}) VALUES({self.insert_placeholders})', (uid, date, scribe, division, assessor, provider, comments))
+            div_sn = self.division_conversion(division_longname=division)
+            uid = self.uid_generator(scribe, date, div_sn)
+            with open(self.RECORD, 'w') as fn:
+                fn.write(uid)
+            curs.execute(f'INSERT INTO {self.table_name}({self.values}) VALUES({self.insert_placeholders})', (uid, date, scribe, div_sn, assessor, provider, comments))
             conn.commit()
             return True
         except ProspectiveScribeDivision:
@@ -159,31 +175,14 @@ class ProspectiveQAs(QAD):
         except Exception:
             traceback.print_exc()
 
-
-    def _verify_scribedivision(self, scribe, division:str) -> bool:
-        """ verifies that the scribe is the in the division of the prospective QA """
-        scribe_div = [info for info in curs.execute(f'SELECT division FROM scribedata WHERE name=?', (scribe,))] # should be documented as 3 letter abbreviation
-        if division in scribe_div:
-            return True
-        else:
-            return False
-        #TODO might deprecate this too since could also do drop down options when adding prospective
-
-    def _verify_division(self, division:str) -> bool:
-        """ verifies that the division exists within scribe coverage """
-        #TODO no need to verify - just have drop down option of available divisions when adding prospective
-
-
-
-
     def uid_generator(self, scribe:str, date:str, division:str):
         name_format = self._uid_name_formatter(scribe)
-        date_format = date.split('-')
+        date_format = ''.join(date.split('-'))
+        
         return f'{self._total_qas()}.{name_format}.{date_format}.{division}'
 
     def _total_qas(self) -> int:
-        with open(self.RECORD, 'r') as fn:
-            return len([line for line in fn])
+        return len([info for info in curs.execute(f'SELECT uid FROM {self.table_name}')])
 
 
 
@@ -270,15 +269,7 @@ class ScribeData(QAD):
             traceback.print_exc()
             # error handling/catching
 
-    def update_attributes(self, **attribute):
-        """
-        Updates attributes per specified kwargs
-
-        Available options:
-            - solo_date
-            - qat
-            - ffts
-        """
+    
 
     def _verify_provided_values(self, qat, solo, ffts) -> tuple:
         """ Checks whether an input was provided for QAT or Solo Date, since these are optional initiation parameters """
@@ -335,6 +326,184 @@ class ScribeData(QAD):
         return end_format, qatv
             
         
+class ScribeProfile(ScribeData):
+    """ Intermediary user to database manipulation of scribe data. Each object pertains to one scribe profile, with all associated functions for manipulating a profile. """
+    def __init__(self, scribe_name:str) -> None:
+        super().__init__()
+        
+        scribe_data = [info for info in curs.execute('SELECT name, solo_date, qat, lqa, nqa, tqa, ffts, division, aqaes, qaf, qar, qats, apes, assr FROM scribedata WHERE name=?', (scribe_name.title(),))][0]
+        if len(scribe_data) < 4:
+            # print(f'SCRIBE DATA: {scribe_data}')
+            raise ScribeNameExistenceError('Scribe name doesn\'t exist, check spelling again')
+
+        self.name = scribe_data[0]
+        self.solo_date:str = scribe_data[1]
+        self.qat:int = scribe_data[2]
+        self.lqa:str = scribe_data[3]
+        self.nqa:str = scribe_data[4]
+        self.tqa:float = scribe_data[5]
+        self.ffts:float = scribe_data[6]
+        self.divisions:list = scribe_data[7].split(', ')
+        self.aqaes:float = scribe_data[8]
+        self.qaf:float = scribe_data[9]
+        self.qar:float = scribe_data[10]
+        self.qats:float = scribe_data[11]
+        self.apes:float = scribe_data[12]
+        self.assr:bool = scribe_data[13]
+
+    
+    def remove_scribe(self) -> bool:
+        """ Remove scribe from database """
+        try:
+            curs.execute(f'DELETE FROM {self.table_name} WHERE name=?', (self.name,))
+            conn.commit()
+            return True
+        except Exception as e:
+            traceback.print_exc()
+            # error handling/catching
+
+    def get_solo_date(self) -> str:
+        """ The date this scribe starting doing solo shifts """
+        return self.solo_date
+
+    def current_qat(self) -> int:
+        """ Retrieves this users current QA Track, default_best=3 """
+        return self.qat
+    
+    def last_qa(self) -> str:
+        """ Retrieves the date of this users last QA """
+        return self.lqa
+    
+    def next_qa(self) -> str:
+        """ Retrieves the date of this users next QA, which is calculated based on the current QAT """
+        return self.nqa
+        
+    def total_qas(self) -> float:
+        """ Retrieves the total number of QAs this user has had """
+        return self.tqa
+
+    def final_training_score(self) -> float:
+        """ The training score of this users last FT (either 5 or 6) per the trainer feedback form, max=5 """
+        return self.ffts
+    
+    def average_qa_evaluation_score(self) -> float:
+        """ The average score of all QA evaluations for this user, max=10 """
+        return self.aqaes
+    
+    def qa_rating(self) -> float:
+        """ 
+        Overall rating for a scribe based on their QA performance, derived by combining the QATS (default max score=3) with the average QAES (max score=10). 
+        
+        The default max score is 13, however can be variable since the QATS contains a subjective measurement affecting its max score therefore, QARm will be defined to explicitly define the max score. """
+        return self.qar
+    
+    def qat_score(self) -> float:
+        """ Quantifies a scribes QAT history into a score, no greater than the highest QAT type value (default=3). This is used to derive the QA Rating (QAR) """
+        return self.qats
+    
+    def provider_evaluation(self) -> float:
+        """ An average of each category in the the providers ACE evaluation, max=5 """
+        return self.apes
+
+    def all_divisions(self) -> list:
+        """ Retrieves collection of all divisions associated with this scribe """
+        return self.divisions
+    
+    def assessor_status(self) -> bool:
+        """ Verifies whether this user is registered as a QA Assessor """
+        return self.assr
+
+
+    def update_solo_date(self, new_solo_date:str) -> bool:
+        """ Updates the registered solo date for this scribe """
+        self.solo_date = new_solo_date
+        print(f'solo date updated: {new_solo_date}')
+        return True
+    
+    def update_qat(self, new_qat:int) -> bool:
+        """ Updates the QAT with the specified QAT """
+        if isinstance(new_qat, int):
+            self.qat = new_qat
+            print(f'QAT updated: {new_qat}')
+            return True
+        else:
+            print(f'NEW QAT: {new_qat}')
+            # TODO make custom error to raise -> Please enter whole numbers only (consider making customizable setting??? lol)
+            return False
+
+    def update_provder_evaluation_score(self, new_pes:float) -> bool:
+        """ Updates the current provider evaluation score """
+        if isinstance(new_pes, float) or isinstance(new_pes, int):
+            self.apes = new_pes
+            print(f'PES udpated: {new_pes}')
+            return True
+        else:
+            print(f'PES update failed; NEWPES:{new_pes}')
+            return False
+    
+    def set_assessor(self) -> bool:
+        """ Sets this scribe as a QA Assessor """
+        self.assr = True
+        return True
+
+    def add_division(self, division_longname:str) -> bool:
+        """ Add additional divisions to a scribe profile """
+        try:
+            division_sn = [info[1] for info in curs.execute('SELECT name, shortname FROM abbreviations WHERE name=?', (division_longname.title(),))][0]
+            # verifies whether the specified division is already associated with this scribe
+            if division_sn not in self.divisions:
+                self.divisions.append()
+                print(f'div added')
+                return True
+            elif division_sn in self.divisions:
+                print(f'div already in there')
+                # custom error handling
+            else:
+                print(f'something else wrong with adding division')
+                # custom error handling
+        except Exception:
+            traceback.print_exc()
+            # custom error handle -> division doesn't exist, check spelling
+
+    def remove_division(self, division_longname:str) -> bool:
+        """ Remove specified divisions from this scribes associations """
+        try:
+            self.divisions.remove([info[1] for info in curs.execute('SELECT name, shortname FROM abbreviations WHERE name=?', (division_longname.title(),))][0])
+            print(f'div removed')
+            return True
+        except Exception:
+            traceback.print_exc()
+            # custom error handle -> division doesn't exist, check spelling
+
+
+    def add_final_training_score(self, ffts:float) -> bool:
+        """ Adds a final FT score to scribe profile if one doesn't already exist; updating isn't allowed """
+        try:
+            float(self.ffts)
+            self.ffts = ffts
+            print(f'FFTS updated to: {ffts}')
+        except Exception:
+            # error handle -> if ffts cant be converted to float/int
+            traceback.print_exc()
+
+            
+
+    def add_qa_report(self):
+        """ Upload results of QA evaluation to add data """
+        # for future
+
+    
+    def save_changes(self) -> bool:
+        """ Saves all recently made changes (since last save) by pushing all changes to database """
+        try:
+            curs.execute('UPDATE scribedata SET solo_date=?, qat=?, ffts=?, division=?, apes=?, assr=? WHERE name=?', (self.solo_date, self.qat, self.ffts, ', '.join(self.divisions), self.apes, self.assr, self.name))
+            conn.commit()
+            return True
+        except Exception:
+            traceback.print_exc()
+            # custom error handline
+
+
 class ProviderData(QAD):
     def __init__(self) -> None:
         super().__init__()
@@ -353,6 +522,7 @@ class ProviderData(QAD):
 
 def load_prospective_qas() -> list[tuple]:
     """ Extracts all entries from prospective QA DB table and formats to display in table """
+    ProspectiveQAs()
     return [info for info in curs.execute('SELECT date, scribe, division, assessor, provider, comments FROM prospectiveqas')]
 
 def load_due_qas() -> list[tuple]:
@@ -386,21 +556,7 @@ def load_assessors() -> list[str]:
 
 
 
-def add_division(scribe:str, division_longname:str) -> bool:
-    """ Add additional divisions to a scribe profile | considering add scribe profile class, this will be apart of there """
-    current_divs:list = [info[0] for info in curs.execute('SELECT division FROM scribedata WHERE name=?', (scribe,))][0].split(', ')
-    current_divs.append([info[1] for info in curs.execute('SELECT name, shortname FROM abbreviations WHERE name=?', (division_longname.title(),))][0])
-    curs.execute('UPDATE scribedata SET division=? WHERE name=?', (', '.join(current_divs), scribe))
-    conn.commit()
-    return True
 
-def remove_division(scribe:str, division_longname:str) -> bool:
-    """  """
-    current_divs:list = [info[0] for info in curs.execute('SELECT division FROM scribedata WHERE name=?', (scribe,))][0].split(', ')
-    current_divs.remove([info[1] for info in curs.execute('SELECT name, shortname FROM abbreviations WHERE name=?', (division_longname.title(),))][0])
-    curs.execute('UPDATE scribedata SET division=? WHERE name=?', (', '.join(current_divs), scribe))
-    conn.commit()
-    return True
 
 
 
@@ -422,16 +578,18 @@ def display_providers_divisions(division_sn:str) -> dict:
     associated_providers = [provider for provider in provider_list]
     return {'providers': associated_providers}
 
-def prospective_dropdown_display(division_ln:str, type:str):
+def prospective_dropdown_display(division_sn:str):
     """ Displays providers and scribes in pQAF dropdown based on specified division """       
-    # convert div long name to shortname (abbreviation)
-    div_sn:str = [info[1] for info in curs.execute('SELECT name, shortname FROM abbreviations WHERE name=?', (division_ln.title(),))][0]
     # creates list of all scribes/providers in the specified division
-    info = [data for data in [info[0] for info in curs.execute(f'SELECT name, division FROM {type}data') if div_sn in info[1].split(', ')]]
-    return {type+'s':info}
+    scribes = [data for data in [info[0] for info in curs.execute(f'SELECT name, division FROM scribedata') if division_sn in info[1].split(', ')]]
+    providers = [data for data in [info[0] for info in curs.execute(f'SELECT name, division FROM providerdata') if division_sn in info[1].split(', ')]]
+    return {'scribes':scribes, 'providers':providers}
         
 
 if __name__ == '__main__':
-    d = prospective_dropdown_display('endocrinology', 'provider')
-    print(d)
+    d = ScribeProfile('Therry Malone')
+    d.set_assessor()
+    e = d.save_changes()
+    if e:
+        print('updated')
     

@@ -169,6 +169,7 @@ QAData.db
 qa-tracks.json
 
 .txt
+completedqas.txt
 
 .csv
 massUploadAbbreviations.csv

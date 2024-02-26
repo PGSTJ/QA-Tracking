@@ -1,7 +1,7 @@
 from flask import (Flask, redirect, render_template, request, send_file, session, url_for, send_from_directory, make_response, jsonify)
 import os
 
-from utils.database import ProspectiveQAs, DueQAs, ScribeData, load_prospective_qas, load_divisions, load_qa_tracks, display_scribe_divisions, display_providers_divisions, _convert_division_long_short
+from utils.database import ProspectiveQAs, DueQAs, ScribeData, load_prospective_qas, load_divisions, load_qa_tracks, load_assessors, _convert_division_long_short, prospective_dropdown_display
 
 app = Flask(__name__, static_url_path='/static')
 
@@ -23,9 +23,10 @@ def home():
     prospective_qas = load_prospective_qas()
     all_divisions = load_divisions()
     all_qat_names = load_qa_tracks()
+    all_assessors = load_assessors()
     
-    # need render variables: due, scribes, providers, assessors
-    return render_template('home.html', prospective=prospective_qas, divisions=all_divisions, qats=all_qat_names)
+    # need render variables: due
+    return render_template('home.html', prospective=prospective_qas, divisions=all_divisions, qats=all_qat_names, assessors=all_assessors)
 
 @app.route('/submit_prospective', methods=['POST'])
 def submit_qa():
@@ -51,18 +52,12 @@ def add_scribe():
 
 
 # TODO Works but will error if re-choose an option
-@app.route('/get_scribes_per_division', methods=['POST', 'GET'])
+@app.route('/get_scribes_providers_per_division', methods=['POST', 'GET'])
 def populate_scribe_divisions_dropdown():
-    division = request.json.get('division')
-    div_sn = _convert_division_long_short(division)
-    return jsonify(display_scribe_divisions(div_sn))
-
-@app.route('/get_providers_per_division', methods=['POST', 'GET'])
-def populate_providers_divisions_dropdown():
-    division = request.json.get('division')
-    div_sn = _convert_division_long_short(division)
-    return jsonify(display_providers_divisions(div_sn))
-    
+    div_sn = _convert_division_long_short(request.json['division'])
+    data = prospective_dropdown_display(div_sn)
+    print(f'data: {data}')
+    return jsonify(data)
 
 
 if __name__ == '__main__':

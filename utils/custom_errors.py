@@ -3,3 +3,9 @@ class ProspectiveScribeDivision(Exception):
 
 class DivisionExistenceError(Exception):
     pass
+
+class ScribeNameExistenceError(Exception):
+    pass
+
+class MultipleDivisionInputs(Exception):
+    pass

@@ -1,7 +1,6 @@
 document.addEventListener("DOMContentLoaded", function () {
     checkTrackerLoop();
-    scribeDivisionListener();
-    providerDivisionListener();
+    divisionListener();
     addQaPopup();
     addNsPopup();
 });
@@ -37,7 +36,7 @@ function addQaPopup() {
                     // Handle successful response
                     console.log("Form submitted successfully");
                     // Optionally, redirect to another page after successful submission
-                    // window.location.href = "/home";
+                    window.location.href = "/home";
                 } else {
                     // Handle error response
                     console.error("Form submission failed");
@@ -115,11 +114,11 @@ function checkTrackerLoop() {
 
 }
 
-function scribeDivisionListener() {
+function divisionListener() {
     document.getElementById("qaf-division").addEventListener("change", function() {
         var division = this.value;
         
-        fetch('/get_scribes_per_division', {
+        fetch('/get_scribes_providers_per_division', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -129,7 +128,11 @@ function scribeDivisionListener() {
         .then(response => response.json())
         .then(data => {
             var scribeSelect = document.getElementById("qaf-scribe");
+            var providerSelect = document.getElementById("qaf-provider");
             scribeSelect.innerHTML = "";
+            providerSelect.innerHTML = "";
+
+            console.log(data)
             
             data.scribes.forEach(function(scribe) {
                 var option = document.createElement("option");
@@ -137,29 +140,7 @@ function scribeDivisionListener() {
                 option.value = scribe;
                 scribeSelect.add(option);
             });
-        })
-        .catch(error => {
-            console.error('Error:', error);
-        });
-    });
-}
 
-function providerDivisionListener() {
-    document.getElementById("qaf-division").addEventListener("change", function() {
-        var division = this.value;
-        
-        fetch('/get_providers_per_division', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ 'division': division })
-        })
-        .then(response => response.json())
-        .then(data => {
-            var providerSelect = document.getElementById("qaf-provider");
-            providerSelect.innerHTML = "";
-            
             data.providers.forEach(function(provider) {
                 var option = document.createElement("option");
                 option.text = provider;
